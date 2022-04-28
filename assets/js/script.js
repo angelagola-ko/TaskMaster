@@ -12,6 +12,8 @@ var createTask = function(taskText, taskDate, taskList) {
 
   // append span and p element to parent li
   taskLi.append(taskSpan, taskP);
+  //Checks due date
+  auditTask(taskLi);
 
   // append to ul list on the page
   $("#list-" + taskList).append(taskLi);
@@ -114,6 +116,9 @@ $("#trash").droppable({
   }
 });
 
+$("#modalDueDate").datepicker({
+  minDate: 0
+});
 
 // modal was triggered
 $("#task-form-modal").on("show.bs.modal", function() {
@@ -150,18 +155,30 @@ $("#task-form-modal .btn-primary").click(function() {
 });
 
 // task text was clicked
-$(".list-group").on("click", "p", function() {
+$(".list-group").on("click", "span", function() {
   // get current text of p element
-  var text = $(this)
+  var date = $(this)
     .text()
     .trim();
+  //create new input element
+  var dateInput = $("<input>").attr("type","text").addClass("form-control").val(date);
+
 
   // replace p element with a new textarea
-  var textInput = $("<textarea>").addClass("form-control").val(text);
-  $(this).replaceWith(textInput);
+ // var textInput = $("<textarea>").addClass("form-control").val(text);
+  $(this).replaceWith(dateInput);
+  //enable jquery ui datepicker
+  dateInput.datepicker({
+    minDate:1,
+   // onClose: function(){
+     //when calender is closed, force a "change" event on the `dataInput`
+    //  $(this).trigger("change");
+    
+  });
 
   // auto focus new element
-  textInput.trigger("focus");
+ // textInput.trigger("focus");
+ dateInput.trigger("focus");
 });
 
 // editable field was un-focused
@@ -190,6 +207,30 @@ $(".list-group").on("blur", "textarea", function() {
   // replace textarea with new content
   $(this).replaceWith(taskP);
 });
+
+var auditTask = function(taskE1){
+  //get date from task element
+  var date=$(taskE1).find("span").text().trim();
+  //to ensure elementis gettingto the function
+  console.log(date);
+
+  //convert to moment object at 5pm
+  var time = moment(date, "L").set("hour", 17);
+
+  //this should print out an object for the value of the data variable, but at 5pm of that date.
+  console.log(time);
+
+  //remove any old classes from element
+  $(taskE1).removeClass("list-group-item-warning list-group-danger");4
+
+  //apply new class if task is near/over due date
+  if (moment().isAfter(time)) {
+    $(taskE1).addClass("list-group-item-danger");
+  }
+  else if (Math.abs(moment().diff(time,"days")) <=2) {
+    $(taskE1).addClass("list-group-item-warning");
+  }
+};
 
 // due date was clicked
 $(".list-group").on("click", "span", function() {
@@ -231,6 +272,9 @@ $(".list-group").on("change", "input[type='text']", function() {
     .addClass("badge badge-primary badge-pill")
     .text(date);
     $(this).replaceWith(taskSpan);
+
+    //Pass task's <li> element into auditTask() to check new due date 
+    auditTask($(taskSpan).closest(".list-group-item"));
 });
 
 // remove all tasks
